@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant Alphanumérique</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 600px; /* Conteneur plus large */
+            height: 500px; /* Hauteur augmentée */
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            color: #333;
+            align-self: flex-start;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+        .chat-input button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .save-button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .save-button:hover {
+            background-color: #218838;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- En-tête du chat -->
+        <div class="chat-header">
+            Assistant Alphanumérique
+        </div>
+
+        <!-- Zone des messages -->
+        <div class="chat-messages" id="chat-messages">
+            <!-- Les messages seront ajoutés ici dynamiquement -->
+        </div>
+
+        <!-- Zone de saisie -->
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Entrez votre message...">
+            <button onclick="sendMessage()">Envoyer</button>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour envoyer un message
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+
+            if (message === "") return; // Ne rien faire si le champ est vide
+
+            // Ajouter le message de l'utilisateur à la zone des messages
+            const chatMessages = document.getElementById('chat-messages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user-message';
+            userMessage.textContent = message;
+            chatMessages.appendChild(userMessage);
+
+            // Effacer le champ de saisie
+            userInput.value = '';
+
+            // Envoyer le message au serveur et obtenir la réponse
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                });
+                const data = await response.json();
+
+                // Afficher la réponse du bot
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot-message';
+
+                if (data.results && data.results.length > 0) {
+                    // Afficher les résultats sous forme de tableau
+                    let tableHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Combinaison</th>
+                                    <th>Traceur</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.results.forEach(result => {
+                        tableHtml += `
+                            <tr>
+                                <td>${result[0]}</td>
+                                <td>${result[1]}</td>
+                            </tr>
+                        `;
+                    });
+                    tableHtml += `
+                            </tbody>
+                        </table>
+
+                    `;
+                    botMessage.innerHTML = tableHtml;
+                } else {
+                    botMessage.textContent = data.response || "Aucun résultat trouvé.";
+                }
+
+                chatMessages.appendChild(botMessage);
+
+                // Faire défiler la zone des messages vers le bas
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } catch (error) {
+                console.error('Erreur:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'error-message';
+                errorMessage.textContent = "Une erreur s'est produite. Veuillez réessayer.";
+                chatMessages.appendChild(errorMessage);
+            }
+        }
+
+        // Fonction pour sauvegarder les résultats
+        function saveResults(results) {
+        if (!results || results.length === 0) {
+            alert("Aucun résultat à sauvegarder !");
+            return;
+        }
+
+        console.log("Résultats sauvegardés :", results);
+
+        try {
+            // Convertir les résultats en JSON
+            const data = JSON.stringify(results, null, 2);
+
+            // Créer un blob à partir des données JSON
+            const blob = new Blob([data], { type: 'application/json' });
+
+            // Créer un lien temporaire pour le téléchargement
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resultats.json'; // Nom du fichier à télécharger
+            document.body.appendChild(a);
+            a.click(); // Déclencher le téléchargement
+
+            // Nettoyer le lien temporaire
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Erreur lors de la sauvegarde des résultats :", error);
+            alert("Une erreur s'est produite lors de la sauvegarde des résultats.");
+        }
+    }
+
+        // Permettre d'envoyer un message en appuyant sur Entrée
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+
+
+    </script>
+</body>
+</html>

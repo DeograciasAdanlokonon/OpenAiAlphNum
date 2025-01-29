@@ -1,0 +1,15 @@
+pip~=24.3.1
+attrs~=21.4.0
+distro~=1.9.0
+wheel~=0.43.0
+cryptography~=41.0.5
+Pillow~=9.4.0
+filelock~=3.16.1
+redis~=5.0.1
+typing_extensions~=4.12.2
+setuptools~=70.3.0
+pytest~=7.4.3
+packaging~=23.0
+openai~=1.60.0
+Flask~=2.2.3
+python-dotenv~=1.0.0
