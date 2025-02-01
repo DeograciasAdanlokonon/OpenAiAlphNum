@@ -55,22 +55,37 @@ def chat():
 
     # Vérifie si l'utilisateur demande un calcul alphanumérique
     if "calcule" in user_input.lower() or "calcul" in user_input.lower():
-        # Extrait la côte de l'entrée utilisateur (ex: "6399 rome")
-        cote = user_input.split(':')
-        results = calculator.perform_task(cote[1].strip())
+        # Vérifie si la côte est bien formatée
+        try:
+            cote = user_input.split(':')
+            if len(cote) < 2:
+                raise ValueError("Format de côte invalide. Utilisez 'calcule: <côte>'.")
+            cote_value = cote[1].strip()
+            results = calculator.perform_task(cote_value)
 
-        if results:
-            response = f"Résultats pour {cote[1]} :"
-            conversation_history.append({"role": "assistant", "content": results})
-            return jsonify({"response": response, "results": results})
-        else:
-            response = f"Aucun résultat trouvé pour {cote[1]}."
-            return jsonify({"response": response})
+            if results:
+                response = f"Résultats pour {cote_value} :"
+                # Convertir les résultats en une chaîne lisible
+                results_str = "\n".join([f"{combinaison}: {resultat}" for combinaison, resultat in results])
+
+                # Ajouter les résultats à l'historique comme un message de l'assistant
+                conversation_history.append({"role": "assistant", "content": results_str})
+
+                return jsonify({"response": response, "results": results})
+            else:
+                response = f"Aucun résultat trouvé pour {cote_value}."
+                return jsonify({"response": response})
+        except ValueError as e:
+            return jsonify({"response": str(e)})
+        except Exception as e:
+            return jsonify({"response": f"Une erreur s'est produite : {str(e)}"})
     else:
         # Si ce n'est pas une demande de calcul, utilise ChatGPT pour répondre
-        response = ask_chatgpt(user_input, conversation_history)
-
-    return jsonify({"response": response})
+        try:
+            response = ask_chatgpt(user_input, conversation_history)
+            return jsonify({"response": response})
+        except Exception as e:
+            return jsonify({"response": f"Une erreur s'est produite lors de la communication avec ChatGPT : {str(e)}"})
 
 
 if __name__ == "__main__":
